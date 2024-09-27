@@ -9,3 +9,6 @@ aiohttp
 beautifulsoup4
 sentence-transformers
 ollama
+groq
+faiss-cpu
+python-dotenv
