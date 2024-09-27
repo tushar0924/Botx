@@ -201,6 +201,9 @@ You are BotX by Tushar, a dynamic virtual assistant designed to emulate human-li
 
 Your ultimate goal is to enhance the user experience by offering insightful, accurate, and easy-to-understand responses while maintaining brevity and relevance.
 
+**Special Rule for Greetings:**
+If the user query is a greeting (e.g., "hi," "hello," "hey"), respond sweetly with a short, friendly greeting without going in the provided context.
+
 **Context:**
 {content}
 
@@ -212,7 +215,10 @@ Your ultimate goal is to enhance the user experience by offering insightful, acc
 """
 
 
-# Streamlit app
+
+import streamlit as st
+import time
+
 st.set_page_config(page_title="Chatbot with Groq", page_icon="🤖")
 st.title("Chat With Me 🤖 ")
 
@@ -221,31 +227,46 @@ if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
     print("Initialized chat history.")
 
+# Initialize vectordb if it doesn't exist in session state
+if "vectordb" not in st.session_state:
+    st.session_state["vectordb"] = None
+
 # Upload PDF files
 pdf_files = st.file_uploader("Upload your PDFs", type="pdf", accept_multiple_files=True)
 url_input = st.text_area("Enter website URLs (comma-separated)")
 
-if pdf_files:
+# If PDFs are uploaded and vectordb is already created
+if pdf_files and st.session_state["vectordb"]:
+    st.write("PDFs are already stored. You can ask questions.")
+    print("PDFs already stored.")
+elif pdf_files:
     pdf_file_names = [file.name for file in pdf_files]
     print(f"Uploaded PDF files: {pdf_file_names}")
     vectordb = create_vectordb(pdf_files, pdf_file_names)
     st.session_state["vectordb"] = vectordb
     print("PDF vector database stored in session state.")
+    st.write("PDFs uploaded successfully. Ask anything!")
 
-if url_input:
+# If URLs are entered and vectordb is already created
+if url_input and st.session_state["vectordb"]:
+    st.write("URLs are already stored. You can ask questions.")
+    print("URLs already stored.")
+elif url_input:
     urls = [url.strip() for url in url_input.split(",")]
     print(f"URLs entered for crawling: {urls}")
     vectordb = create_vectordb_from_crawled_data(urls)
     st.session_state["vectordb"] = vectordb
     print("Crawled URL vector database stored in session state.")
+    st.write("URLs crawled successfully. Ask anything!")
 
+# Display the chat history
 for message in st.session_state["chat_history"]:
     if message["role"] == "user":
         with st.chat_message("user"):
             st.write(message["content"])
     else:
         with st.chat_message("assistant"):
-            st.write(message["content"])    
+            st.write(message["content"])
 
 # Get the user's question
 user_query = st.chat_input("Ask a question about the PDF(s) or the URLs")
@@ -259,7 +280,6 @@ if user_query:
     else:
         with st.spinner("Generating response..."):
             # Fetch relevant documents based on user query
-            
             start_time = time.time()
             docs = vectordb.similarity_search(user_query, k=3)
             context = "\n".join([doc.page_content for doc in docs])
