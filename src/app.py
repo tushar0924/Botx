@@ -216,11 +216,9 @@ If the user query is a greeting (e.g., "hi," "hello," "hey"), respond sweetly wi
 
 
 
-import streamlit as st
-import time
 
 st.set_page_config(page_title="Chatbot with Groq", page_icon="🤖")
-st.title("Chat With Me 🤖 ")
+st.title("Chat With Me 🤖")
 
 # Initialize chat history in session state if it doesn't exist
 if "chat_history" not in st.session_state:
@@ -233,7 +231,12 @@ if "vectordb" not in st.session_state:
 
 # Upload PDF files
 pdf_files = st.file_uploader("Upload your PDFs", type="pdf", accept_multiple_files=True)
-url_input = st.text_area("Enter website URLs (comma-separated)")
+
+# Input for a single URL
+url_input = st.text_input("Enter a website URL")
+
+# Submit button for the URL input
+url_submit = st.button("Submit URL")
 
 # If PDFs are uploaded and vectordb is already created
 if pdf_files and st.session_state["vectordb"]:
@@ -247,17 +250,17 @@ elif pdf_files:
     print("PDF vector database stored in session state.")
     st.write("PDFs uploaded successfully. Ask anything!")
 
-# If URLs are entered and vectordb is already created
-if url_input and st.session_state["vectordb"]:
-    st.write("URLs are already stored. You can ask questions.")
-    print("URLs already stored.")
-elif url_input:
-    urls = [url.strip() for url in url_input.split(",")]
-    print(f"URLs entered for crawling: {urls}")
+# If URL is submitted and vectordb is already created
+if url_submit and st.session_state["vectordb"]:
+    st.write("URL is already stored. You can ask questions.")
+    print("URL already stored.")
+elif url_submit and url_input:
+    urls = [url_input.strip()]  # Only one URL is submitted
+    print(f"URL entered for crawling: {urls}")
     vectordb = create_vectordb_from_crawled_data(urls)
     st.session_state["vectordb"] = vectordb
     print("Crawled URL vector database stored in session state.")
-    st.write("URLs crawled successfully. Ask anything!")
+    st.write("URL crawled successfully. Ask anything!")
 
 # Display the chat history
 for message in st.session_state["chat_history"]:
@@ -269,14 +272,14 @@ for message in st.session_state["chat_history"]:
             st.write(message["content"])
 
 # Get the user's question
-user_query = st.chat_input("Ask a question about the PDF(s) or the URLs")
+user_query = st.chat_input("Ask a question about the PDF(s) or the URL")
 
 if user_query:
     vectordb = st.session_state.get("vectordb", None)
     if not vectordb:
         with st.chat_message("assistant"):
-            st.write("Please upload PDF(s) or enter URLs first.")
-            print("No PDFs or URLs provided yet.")
+            st.write("Please upload PDF(s) or enter a URL first.")
+            print("No PDFs or URL provided yet.")
     else:
         with st.spinner("Generating response..."):
             # Fetch relevant documents based on user query
