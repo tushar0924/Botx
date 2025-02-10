@@ -204,6 +204,9 @@ Your ultimate goal is to enhance the user experience by offering insightful, acc
 **Special Rule for Greetings:**
 If the user query is a greeting (e.g., "hi," "hello," "hey"), respond sweetly with a short, friendly greeting without going in the provided context.
 
+**Chat History:**
+{chat_history}
+
 **Context:**
 {content}
 
@@ -211,10 +214,7 @@ If the user query is a greeting (e.g., "hi," "hello," "hey"), respond sweetly wi
 {user_query}
 
 **BotX by Tushar Response:**
-
 """
-
-
 
 
 st.set_page_config(page_title="Chatbot with Groq", page_icon="🤖")
@@ -237,6 +237,7 @@ url_input = st.text_input("Enter a website URL")
 
 # Submit button for the URL input
 url_submit = st.button("Submit URL")
+
 
 # If PDFs are uploaded and vectordb is already created
 if pdf_files and st.session_state["vectordb"]:
@@ -292,13 +293,16 @@ if user_query:
                 with st.chat_message("assistant"):
                     st.write("I'm sorry, but I couldn't find relevant information to answer your question based on the provided content.")
             else:
+                chat_history = "\n".join(
+                    f"{msg['role']}: {msg['content']}" for msg in st.session_state["chat_history"]
+                )
                 # Use Groq to generate a response
                 response = client.chat.completions.create(
                     model="llama3-8b-8192",
                     messages=[{
                         "role": "system",
                         "content": prompt_template.format(
-                            content=context, user_query=user_query
+                            content=context, user_query=user_query, chat_history=chat_history
                         ),
                     }],
                 )
@@ -319,4 +323,4 @@ if user_query:
                 st.session_state.chat_history.append(
                     {"role": "assistant", "content": response.choices[0].message.content}
                 )
-                print("Chat history updated.")
+                print("Chat history updated.")                                                   
